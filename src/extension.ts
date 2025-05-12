@@ -20,14 +20,12 @@ function debounce<T extends (...args: any[]) => Promise<any>>(fn: T, ms: number)
 	} as T;
 }
 
-/** Get lines around cursor */
 function getSurroundingLines(doc: vscode.TextDocument, pos: vscode.Position, radius: number): string {
 	const start = Math.max(0, pos.line - radius);
 	const end = Math.min(doc.lineCount - 1, pos.line + radius);
 	return Array.from({ length: end - start + 1 }, (_, i) => doc.lineAt(start + i).text).join('\n');
 }
 
-/** Check if Ollama is installed */
 async function checkOllamaInstalled(): Promise<boolean> {
 	return new Promise<boolean>((resolve) => {
 		cp.exec('ollama --version', (error) => {
@@ -109,7 +107,6 @@ async function pullOllamaModel(model: string): Promise<boolean> {
 function startOllamaServer(): Promise<boolean> {
 	return new Promise<boolean>((resolve) => {
 		try {
-			// Check if the server is already running
 			const netstatCmd = os.platform() === 'win32' ? 'netstat -ano | findstr 11434' : 'lsof -i :11434';
 			
 			try {
@@ -118,7 +115,6 @@ function startOllamaServer(): Promise<boolean> {
 				resolve(true); // Server already running
 				return;
 			} catch (error) {
-				// Server not running, start it
 				console.log('Starting Ollama server...');
 				
 				vscode.window.withProgress({
@@ -129,20 +125,17 @@ function startOllamaServer(): Promise<boolean> {
 					return new Promise<void>((progressResolve) => {
 						const ollamaProcess = cp.spawn('ollama', ['serve'], { 
 							detached: true,
-							stdio: 'pipe'  // Changed from 'ignore' to capture output
+							stdio: 'pipe'
 						});
 						
-						// Capture any errors
 						ollamaProcess.stderr.on('data', (data) => {
 							console.error(`Ollama server error: ${data}`);
 						});
 						
 						ollamaProcess.stdout.on('data', (data) => {
 							console.log(`Ollama server: ${data}`);
-							// If we see output indicating the server is running
 							if (data.toString().includes('listening')) {
 								progress.report({ message: 'Server started successfully' });
-								// Wait a moment to ensure the server is ready
 								setTimeout(() => {
 									resolve(true);
 									progressResolve();
@@ -197,7 +190,7 @@ class CodeEchoProvider implements vscode.InlineCompletionItemProvider {
 	private readonly patternCategories = {
 		// Basic patterns that should always trigger
 		basic: [
-			{ pattern: /.*$/, description: 'Any text' },  // This will match any text
+			{ pattern: /.*$/, description: 'Any text' },
 			{ pattern: /^\s*$/, description: 'Empty line or whitespace' }
 		],
 
@@ -220,8 +213,7 @@ class CodeEchoProvider implements vscode.InlineCompletionItemProvider {
 	constructor() {
 		const cfg = vscode.workspace.getConfiguration('codeecho');
 		
-		// Use a very short debounce time for better real-time suggestions
-		const defaultDebounce = 30; // 30ms is very responsive but not overwhelming
+		const defaultDebounce = 30;
 		const ms = cfg.get<number>('debounceMs') || defaultDebounce;
 		
 		this.provideDebounced = debounce(this.provideInternal.bind(this), ms);
@@ -231,13 +223,10 @@ class CodeEchoProvider implements vscode.InlineCompletionItemProvider {
 	}
 
 	private shouldTrigger(prefix: string): boolean {
-		// Don't trigger in comments
 		const isComment = this.isInComment(prefix);
 		if (isComment) {
 			return false;
 		}
-		
-		// ALWAYS return true for non-comment code to make suggestions show up
 		return true;
 	}
 	
@@ -263,13 +252,13 @@ class CodeEchoProvider implements vscode.InlineCompletionItemProvider {
 		// Check for Python docstrings
 		const tripleQuotesCount = (prefix.match(/"""/g) || []).length;
 		if (tripleQuotesCount % 2 !== 0) {
-			return true; // Inside a docstring
+			return true;
 		}
 		
 		// Check for Python single-quoted docstrings
 		const tripleSingleQuotesCount = (prefix.match(/'''/g) || []).length;
 		if (tripleSingleQuotesCount % 2 !== 0) {
-			return true; // Inside a docstring
+			return true;
 		}
 		
 		return false;
@@ -299,7 +288,6 @@ class CodeEchoProvider implements vscode.InlineCompletionItemProvider {
 		context: vscode.InlineCompletionContext,
 		token: vscode.CancellationToken
 	): Thenable<vscode.InlineCompletionItem[]> {
-		// Get current line text
 		const currentText = document.getText(new vscode.Range(
 			position.line,
 			0,
@@ -307,21 +295,17 @@ class CodeEchoProvider implements vscode.InlineCompletionItemProvider {
 			position.character
 		));
 		
-		// Don't trigger in comments
 		if (this.isInComment(currentText)) {
 			return Promise.resolve([]);
 		}
 
-		// Always trigger suggestions for non-comment code
 		const now = Date.now();
 		this.lastTriggerTime = now;
 		this.lastRequest = { position, text: currentText };
 		
-		// Check cache before making a new request
 		const cacheKey = this.getCacheKey(document, position);
 		const cached = this.suggestionCache.get(cacheKey);
 		if (cached && now - cached.timestamp < this.CACHE_TTL) {
-			// Check if any of the cached items are the static test suggestion
 			const hasStaticSuggestion = cached.items.some(item => 
 				item.insertText === "# Static suggestion for testing"
 			);
@@ -329,12 +313,10 @@ class CodeEchoProvider implements vscode.InlineCompletionItemProvider {
 			if (!hasStaticSuggestion) {
 				return Promise.resolve(cached.items);
 			} else {
-				// If we have a static suggestion, don't use it
 				this.suggestionCache.delete(cacheKey);
 			}
 		}
 
-		// Make debounce time shorter to improve responsiveness
 		return this.provideDebounced(document, position, context, token);
 	}
 
@@ -357,7 +339,6 @@ class CodeEchoProvider implements vscode.InlineCompletionItemProvider {
 			const cfg = vscode.workspace.getConfiguration('codeecho');
 			const radius = cfg.get<number>('contextRadius')!;
 			
-			// Get the current line up to cursor position
 			const currentLine = document.lineAt(position.line);
 			const prefix = currentLine.text.slice(0, position.character);
 			
@@ -389,11 +370,9 @@ class CodeEchoProvider implements vscode.InlineCompletionItemProvider {
 
 			// Special handling for empty lines
 			if (prefix.trim() === '') {
-				// Get the previous line to determine context
 				const prevLine = position.line > 0 ? document.lineAt(position.line - 1).text : '';
 				const prevLineTrimmed = prevLine.trim();
 
-				// Suggest common patterns based on previous line
 				if (prevLineTrimmed.endsWith(':')) {
 					const items = [new vscode.InlineCompletionItem('    pass')];
 					items[0].range = new vscode.Range(position, position);
@@ -409,10 +388,8 @@ class CodeEchoProvider implements vscode.InlineCompletionItemProvider {
 				}
 			}
 			
-			// Get surrounding context
 			const snippet = getSurroundingLines(document, position, radius);
 			
-			// Structure the prompt to emphasize what's already written
 			const payload = `EXISTING CODE (DO NOT REPEAT THIS):\n${prefix}\n\nCONTEXT:\n${snippet}\n\nINSTRUCTIONS: Complete the code starting from where the cursor is. DO NOT repeat any existing code. Only provide the completion part.`;
 			
 			const suggestions = await queryLocalModel(payload);
@@ -436,23 +413,19 @@ class CodeEchoProvider implements vscode.InlineCompletionItemProvider {
 				return item;
 			});
 
-			// Cache the results
 			const cacheKey = this.getCacheKey(document, position);
 			this.suggestionCache.set(cacheKey, {
 				items,
 				timestamp: Date.now()
 			});
 
-			// Clean up old cache entries
 			this.cleanupCache();
 
-			// Check if suggestions exist in VS Code's storage
 			this.checkIfSuggestionsAreVisible(items);
 
 			return items;
 		} catch (error) {
 			console.error('CodeEcho Error:', error);
-			// If error and we haven't exceeded retry limit, try again
 			if (this.retryCount < this.MAX_RETRIES) {
 				this.retryCount++;
 				return this.provideInternal(document, position, context, token);
@@ -464,10 +437,8 @@ class CodeEchoProvider implements vscode.InlineCompletionItemProvider {
 		}
 	}
 
-	// Helper method to check if our suggestions are being displayed by VS Code
 	private checkIfSuggestionsAreVisible(items: vscode.InlineCompletionItem[]) {
 		if (items.length > 0) {
-			// Use a timeout to check if our suggestion is visible
 			setTimeout(() => {
 			}, 500);
 		}
@@ -481,13 +452,11 @@ class CodeEchoProvider implements vscode.InlineCompletionItemProvider {
 
 	private cleanupCache() {
 		const now = Date.now();
-		// Remove expired entries
 		for (const [key, value] of this.suggestionCache.entries()) {
 			if (now - value.timestamp > this.CACHE_TTL) {
 				this.suggestionCache.delete(key);
 			}
 		}
-		// If still too many entries, remove oldest ones
 		if (this.suggestionCache.size > this.MAX_CACHE_SIZE) {
 			const entries = Array.from(this.suggestionCache.entries())
 				.sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -519,7 +488,6 @@ export async function activate(ctx: vscode.ExtensionContext) {
 			return;
 		}
 
-		// Start Ollama server if it's not already running
 		const serverStarted = await startOllamaServer();
 		if (!serverStarted) {
 			const action = await vscode.window.showErrorMessage(
@@ -536,7 +504,6 @@ export async function activate(ctx: vscode.ExtensionContext) {
 			vscode.window.showInformationMessage('CodeEcho: Ollama server is running');
 		}
 
-		// Check and pull the required model if needed
 		const modelName = 'qwen2.5-coder';
 		const modelInstalled = await checkModelInstalled(modelName);
 		
@@ -592,10 +559,7 @@ export async function activate(ctx: vscode.ExtensionContext) {
 	const triggerCmd = vscode.commands.registerCommand('codeecho.triggerSuggestion', async () => {
 		const editor = vscode.window.activeTextEditor;
 		if (editor) {
-			// Force suggestion to appear
 			vscode.commands.executeCommand('editor.action.inlineSuggest.trigger');
-			
-			// Show a notification that suggestions were triggered
 			vscode.window.showInformationMessage('CodeEcho: Suggestions triggered');
 		}
 	});

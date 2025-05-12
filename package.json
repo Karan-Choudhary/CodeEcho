@@ -97,10 +97,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/codeecho.git"
+    "url": "https://github.com/Karan-Choudhary/CodeEcho"
   },
-  "homepage": "https://github.com/yourusername/codeecho",
+  "homepage": "https://github.com/Karan-Choudhary/CodeEcho",
   "bugs": {
-    "url": "https://github.com/yourusername/codeecho/issues"
+    "url": "https://github.com/Karan-Choudhary/CodeEcho/issues"
   }
 }

@@ -1,0 +1,106 @@
+{
+  "name": "codeecho",
+  "displayName": "CodeEcho",
+  "description": "A VS Code extension that uses a local Ollama Qwen2.5-Coder model to provide code suggestions with automatic model installation.",
+  "version": "0.0.1",
+  "publisher": "your-publisher-id",
+  "engines": {
+    "vscode": "^1.99.0"
+  },
+  "categories": [
+    "Other",
+    "Programming Languages",
+    "Machine Learning",
+    "Snippets"
+  ],
+  "keywords": [
+    "code completion",
+    "ai",
+    "local ai",
+    "ollama",
+    "autocomplete"
+  ],
+  "activationEvents": [
+    "onLanguage:python",
+    "onLanguage:javascript",
+    "onLanguage:typescript",
+    "onLanguage:javascriptreact",
+    "onLanguage:typescriptreact",
+    "onLanguage:html",
+    "onLanguage:css"
+  ],
+  "main": "./out/extension.js",
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -w -p ./"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "@types/node": "^20.x",
+    "@types/vscode": "^1.99.0",
+    "@types/node-fetch": "^2.5.12",
+    "eslint": "^9.25.1",
+    "@typescript-eslint/parser": "^8.31.1",
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.5.2"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "codeecho.triggerSuggestion",
+        "title": "CodeEcho: Trigger Suggestion"
+      },
+      {
+        "command": "codeecho.clearCache",
+        "title": "CodeEcho: Clear Suggestion Cache"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "codeecho.triggerSuggestion",
+        "key": "ctrl+space ctrl+e",
+        "mac": "cmd+space cmd+e",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "codeecho.clearCache",
+        "key": "ctrl+shift+space ctrl+shift+e",
+        "mac": "cmd+shift+space cmd+shift+e",
+        "when": "editorTextFocus"
+      }
+    ],
+    "configuration": {
+      "title": "CodeEcho Settings",
+      "properties": {
+        "codeecho.endpoint": {
+          "type": "string",
+          "default": "http://localhost:11434/api/chat",
+          "description": "URL of the Ollama API for code completion"
+        },
+        "codeecho.contextRadius": {
+          "type": "number",
+          "default": 10,
+          "description": "Number of lines above/below cursor to send as context"
+        },
+        "codeecho.debounceMs": {
+          "type": "number",
+          "default": 100,
+          "description": "Delay (ms) after typing before requesting completion"
+        }
+      }
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/codeecho.git"
+  },
+  "homepage": "https://github.com/yourusername/codeecho",
+  "bugs": {
+    "url": "https://github.com/yourusername/codeecho/issues"
+  }
+}

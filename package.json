@@ -2,8 +2,13 @@
   "name": "codeecho",
   "displayName": "CodeEcho",
   "description": "A VS Code extension that uses a local Ollama Qwen2.5-Coder model to provide code suggestions with automatic model installation.",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "KaranChoudhary",
+  "icon": "images/logo.png",
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
   "engines": {
     "vscode": "^1.99.0"
   },
